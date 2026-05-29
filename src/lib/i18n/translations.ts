@@ -1,0 +1,52 @@
+export const translations = {
+  en: {
+    welcome: "Welcome",
+    login: "Login",
+    signup: "Sign Up",
+    dashboard: "Dashboard",
+    properties: "Properties",
+    leases: "Leases",
+    maintenance: "Maintenance",
+    utilities: "Utilities",
+    apply: "Apply",
+    submit: "Submit",
+  },
+  zu: {
+    welcome: "Siyakwamukela",
+    login: "Ngena",
+    signup: "Bhalisa",
+    dashboard: "Ideshibhodi",
+    properties: "Izindawo",
+    leases: "Izivumelwano zokuqasha",
+    maintenance: "Ukugcinwa",
+    utilities: "Izidingo",
+    apply: "Faka isicelo",
+    submit: "Thumela",
+  },
+  af: {
+    welcome: "Welkom",
+    login: "Teken in",
+    signup: "Sluit aan",
+    dashboard: "Kontroleskerm",
+    properties: "Eiendomme",
+    leases: "Huurkontrakte",
+    maintenance: "Instandhouding",
+    utilities: "Nutsdienste",
+    apply: "Doen aansoek",
+    submit: "Indien",
+  },
+  xh: {
+    welcome: "Wamkelekile",
+    login: "Ngena",
+    signup: "Bhalisa",
+    dashboard: "Ideshibhodi",
+    properties: "Iipropati",
+    leases: "Izivumelwano zokuqesha",
+    maintenance: "Ulondolozo",
+    utilities: "Iinkonzo",
+    apply: "Faka isicelo",
+    submit: "Ngenisa",
+  }
+}
+
+export type Locale = keyof typeof translations;
