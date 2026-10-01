@@ -11,10 +11,14 @@ export async function createInvoice(supabase: any, data: {
   unitNumber: string,
   amount: number,
   description: string,
-  dueDate: Date
+  dueDate: Date,
+  vatRate?: number
 }) {
   const invoiceNumber = generateInvoiceNumber(data.clientCode, data.unitNumber, new Date())
-  const vatAmount = data.amount * 0.15 // Standard ZAF VAT 15%
+  // Do not assume VAT on every rental: residential rent is generally VAT-exempt.
+  // Pass 0.15 only when the landlord/property entity is VAT-registered and the charge is taxable.
+  const vatRate = data.vatRate ?? 0
+  const vatAmount = data.amount * vatRate
 
   const { data: invoice, error } = await supabase
     .from('invoices')

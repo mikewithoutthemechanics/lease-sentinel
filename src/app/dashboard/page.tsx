@@ -36,7 +36,7 @@ export default function DashboardPage() {
         <nav className="space-y-1">
           {[
             ['Overview', Home], ['Properties', Building2], ['Tenants & leases', FileCheck2], ['Money', CircleDollarSign], ['Maintenance', Wrench], ['Reports', Activity],
-          ].map(([label, Icon]) => <button key={label as string} onClick={() => { setActiveNav(label as string); setMobileNav(false) }} className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${activeNav === label ? 'bg-[#e7f1ee] text-[#193b37]' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'}`}><Icon size={18} />{label as string}{label === 'Maintenance' && <span className="ml-auto rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-bold text-orange-700">4</span>}</button>)}
+          ].map(([label, Icon]) => <button key={label as string} onClick={() => { if (label === 'Money') window.location.href = '/dashboard/finance'; setActiveNav(label as string); setMobileNav(false) }} className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${activeNav === label ? 'bg-[#e7f1ee] text-[#193b37]' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'}`}><Icon size={18} />{label as string}{label === 'Maintenance' && <span className="ml-auto rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-bold text-orange-700">4</span>}</button>)}
         </nav>
         <p className="px-3 mb-3 mt-9 text-[10px] font-bold uppercase tracking-[.16em] text-slate-400">Manage</p>
         <nav className="space-y-1">

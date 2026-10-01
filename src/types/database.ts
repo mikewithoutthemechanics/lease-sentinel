@@ -55,6 +55,37 @@ export interface Invoice {
   created_at: string;
 }
 
+export type ExpenseCategory = 'rates' | 'utilities' | 'insurance' | 'maintenance' | 'management' | 'bond' | 'other';
+
+export interface Expense {
+  id: string;
+  property_id: string;
+  unit_id?: string;
+  category: ExpenseCategory;
+  description: string;
+  supplier?: string;
+  amount: number;
+  vat_amount: number;
+  expense_date: string;
+  status: 'unpaid' | 'scheduled' | 'paid' | 'reimbursed';
+  receipt_url?: string;
+  created_by?: string;
+  created_at: string;
+}
+
+export interface OwnerStatement {
+  id: string;
+  property_id: string;
+  period_start: string;
+  period_end: string;
+  income: number;
+  expenses: number;
+  owner_amount: number;
+  status: 'draft' | 'approved' | 'sent';
+  statement_url?: string;
+  created_at: string;
+}
+
 export interface MaintenanceRequest {
   id: string;
   unit_id: string;
