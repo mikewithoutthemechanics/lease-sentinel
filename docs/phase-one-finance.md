@@ -21,6 +21,11 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=...
 SUPABASE_SERVICE_ROLE_KEY=... # server-only; never expose to the browser
 PAYFAST_PASSPHRASE=...
 CRON_SECRET=...
+NOTIFICATION_FROM_EMAIL=Lease Sentinel <notifications@yourdomain.co.za>
+RESEND_API_KEY=... # email delivery
+TWILIO_ACCOUNT_SID=... # optional SMS delivery
+TWILIO_AUTH_TOKEN=...
+TWILIO_FROM_NUMBER=+27...
 ```
 
 ## Scheduled recurring invoices
@@ -46,3 +51,14 @@ The database function creates due invoices once and advances each recurring char
 CSV columns supported: `date,description,reference,amount,balance`. Amounts should be signed: positive income and negative expenses.
 
 Payfast ITN notifications are signature checked, amount checked against the invoice, processed using the service role after verification, and protected against duplicate `pf_payment_id` inserts.
+
+## Production verification checklist
+
+- Run `supabase db push` against a staging project first.
+- Create two landlord accounts and verify each only sees its own properties, units, leases, invoices, expenses, statements, bank lines and distributions.
+- Run `supabase/tests/finance_rls.sql` as part of the staging RLS review.
+- Configure the Payfast sandbox callback URL and replay duplicate callbacks; the second callback must return `Already processed`.
+- Set `RESEND_API_KEY` and `TWILIO_*` values, then invoke `/api/cron/notifications` with `CRON_SECRET`.
+- Verify failed providers retry twice and enter `failed` after the third attempt.
+- Test CSV exports from the selected South African banking profile and confirm date, reference, signed amount and balance columns.
+- Verify Vercel cron invocations in deployment logs.

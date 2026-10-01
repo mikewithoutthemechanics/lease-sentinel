@@ -47,11 +47,11 @@ export default function FinancePage() {
   const [matchingSearch, setMatchingSearch] = useState('')
   const [allocationAmount, setAllocationAmount] = useState('')
   const [matchingData, setMatchingData] = useState<{ payments: Array<{ id: string; invoice_id: string; amount: number; payment_date: string; payment_method?: string; transaction_id?: string; confidence: number }>; expenses: Array<{ id: string; description: string; supplier?: string; amount: number; expense_date: string; category: string; confidence: number }> }>({ payments: [], expenses: [] })
+  const [statementHistory, setStatementHistory] = useState<Array<{ id: string; property_id: string; period_start: string; period_end: string; owner_amount: number; status: string }>>([])
 
   useEffect(() => {
-    fetch('/api/finance')
-      .then(response => response.ok ? response.json() : Promise.reject(new Error('Could not load finance data')))
-      .then(setFinance)
+    Promise.all([fetch('/api/finance').then(response => response.ok ? response.json() : Promise.reject(new Error('Could not load finance data'))), fetch('/api/finance/statement').then(response => response.ok ? response.json() : Promise.reject(new Error('Could not load statement history')))])
+      .then(([financeResult, statementResult]) => { setFinance(financeResult); setStatementHistory(statementResult.statements ?? []) })
       .catch(error => setMessage(error.message))
       .finally(() => setLoading(false))
   }, [])

@@ -52,6 +52,14 @@ CREATE POLICY "Owners and managers can view reconciliation audit" ON reconciliat
 CREATE POLICY "Users can queue their own notifications" ON notification_queue FOR INSERT
   WITH CHECK (auth.uid() = recipient_id);
 
+-- Close the original schema's access gap for property context used by finance selectors.
+CREATE POLICY "Owners and managers can view units" ON units FOR SELECT
+  USING (EXISTS (SELECT 1 FROM properties p WHERE p.id = property_id AND (auth.uid() = p.owner_id OR auth.uid() = p.manager_id)));
+CREATE POLICY "Owners and managers can view leases" ON leases FOR SELECT
+  USING (EXISTS (SELECT 1 FROM units u JOIN properties p ON p.id = u.property_id WHERE u.id = unit_id AND (auth.uid() = p.owner_id OR auth.uid() = p.manager_id)));
+CREATE POLICY "Owners and managers can view tenant profiles" ON profiles FOR SELECT
+  USING (auth.uid() = id OR EXISTS (SELECT 1 FROM leases l JOIN units u ON u.id = l.unit_id JOIN properties p ON p.id = u.property_id WHERE l.tenant_id = profiles.id AND (auth.uid() = p.owner_id OR auth.uid() = p.manager_id)));
+
 ALTER TABLE owner_statements ADD COLUMN IF NOT EXISTS approved_by UUID REFERENCES profiles(id);
 ALTER TABLE owner_statements ADD COLUMN IF NOT EXISTS approved_at TIMESTAMP WITH TIME ZONE;
 ALTER TABLE owner_statements ADD COLUMN IF NOT EXISTS sent_at TIMESTAMP WITH TIME ZONE;
