@@ -18,12 +18,15 @@ export async function GET(request: Request) {
   const start = `${month}-01`
   const end = format(addMonths(parseISO(start), 1), 'yyyy-MM-dd')
 
-  const [{ data: invoices, error: invoiceError }, { data: payments, error: paymentError }, { data: expenses, error: expenseError }] = await Promise.all([
+  const [{ data: invoices, error: invoiceError }, { data: payments, error: paymentError }, { data: expenses, error: expenseError }, { data: properties, error: propertyError }, { data: distributions, error: distributionError }, { data: bankTransactions, error: bankError }] = await Promise.all([
     supabase.from('invoices').select('id, invoice_number, amount, vat_amount, due_date, status, description, leases(tenant_id, units(unit_number, properties(id, name)))').order('due_date', { ascending: false }),
     supabase.from('payments').select('id, invoice_id, amount, payment_method, transaction_id, payment_date').gte('payment_date', start).lt('payment_date', end).order('payment_date', { ascending: false }),
     supabase.from('expenses').select('id, property_id, category, description, supplier, amount, vat_amount, expense_date, status').gte('expense_date', start).lt('expense_date', end).order('expense_date', { ascending: false }),
+    supabase.from('properties').select('id, name, city, province').order('name'),
+    supabase.from('owner_distributions').select('id, property_id, amount, status, created_at, properties(name)').in('status', ['pending', 'approved']).order('created_at', { ascending: false }),
+    supabase.from('bank_transactions').select('id, transaction_date, description, reference, amount, balance, status, property_id').eq('status', 'unmatched').order('transaction_date', { ascending: false }).limit(20),
   ])
-  if (invoiceError || paymentError || expenseError) return NextResponse.json({ error: (invoiceError || paymentError || expenseError)?.message }, { status: 400 })
+  if (invoiceError || paymentError || expenseError || propertyError || distributionError || bankError) return NextResponse.json({ error: (invoiceError || paymentError || expenseError || propertyError || distributionError || bankError)?.message }, { status: 400 })
 
   const today = new Date()
   const normalisedInvoices = (invoices ?? []).map(invoice => ({ ...invoice, status: invoice.status === 'unpaid' && isBefore(parseISO(invoice.due_date), today) ? 'overdue' : invoice.status }))
@@ -31,7 +34,7 @@ export async function GET(request: Request) {
   const totalCollected = (payments ?? []).reduce((sum, p) => sum + money(p.amount), 0)
   const totalExpenses = (expenses ?? []).reduce((sum, e) => sum + money(e.amount), 0)
   const arrears = normalisedInvoices.filter(i => ['unpaid', 'overdue'].includes(i.status)).map(i => ({ ...i, outstanding: money(i.amount) }))
-  return NextResponse.json({ month, invoices: normalisedInvoices, payments: payments ?? [], expenses: expenses ?? [], arrears, summary: { totalExpected, totalCollected, totalExpenses, outstanding: arrears.reduce((sum, i) => sum + i.outstanding, 0) } })
+  return NextResponse.json({ month, invoices: normalisedInvoices, payments: payments ?? [], expenses: expenses ?? [], properties: properties ?? [], distributions: distributions ?? [], bankTransactions: bankTransactions ?? [], arrears, summary: { totalExpected, totalCollected, totalExpenses, outstanding: arrears.reduce((sum, i) => sum + i.outstanding, 0) } })
 }
 
 export async function POST(request: Request) {
@@ -74,6 +77,21 @@ export async function POST(request: Request) {
     const { data, error } = await supabase.from('owner_distributions').update({ status: 'approved', approved_by: user.id, approved_at: new Date().toISOString() }).eq('id', body.distributionId).eq('status', 'pending').select().single()
     if (error) return NextResponse.json({ error: error.message }, { status: 400 })
     return NextResponse.json({ distribution: data })
+  }
+
+  if (action === 'create-distribution') {
+    if (!body.propertyId || !Number(body.amount) || Number(body.amount) <= 0) return NextResponse.json({ error: 'propertyId and a positive amount are required' }, { status: 400 })
+    const { data, error } = await supabase.from('owner_distributions').insert({ property_id: body.propertyId, statement_id: body.statementId || null, amount: Number(body.amount), status: 'pending' }).select().single()
+    if (error) return NextResponse.json({ error: error.message }, { status: 400 })
+    return NextResponse.json({ distribution: data }, { status: 201 })
+  }
+
+  if (action === 'match-bank') {
+    if (!body.bankTransactionId || (!body.paymentId && !body.expenseId)) return NextResponse.json({ error: 'A bank transaction and payment or expense are required' }, { status: 400 })
+    const update = body.paymentId ? { status: 'matched', matched_payment_id: body.paymentId } : { status: 'matched', matched_expense_id: body.expenseId }
+    const { data, error } = await supabase.from('bank_transactions').update(update).eq('id', body.bankTransactionId).eq('status', 'unmatched').select().single()
+    if (error) return NextResponse.json({ error: error.message }, { status: 400 })
+    return NextResponse.json({ transaction: data })
   }
 
   if (action === 'run-recurring') {
