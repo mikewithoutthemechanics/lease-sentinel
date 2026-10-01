@@ -78,3 +78,12 @@ CREATE POLICY "Owners and managers can manage property expenses" ON expenses FOR
 CREATE POLICY "Owners and managers can view statements" ON owner_statements FOR ALL
   USING (EXISTS (SELECT 1 FROM properties p WHERE p.id = property_id AND (auth.uid() = p.owner_id OR auth.uid() = p.manager_id)))
   WITH CHECK (EXISTS (SELECT 1 FROM properties p WHERE p.id = property_id AND (auth.uid() = p.owner_id OR auth.uid() = p.manager_id)));
+
+CREATE POLICY "Owners and managers can manage recurring charges" ON recurring_charges FOR ALL
+  USING (EXISTS (SELECT 1 FROM leases l JOIN units u ON u.id = l.unit_id JOIN properties p ON p.id = u.property_id WHERE l.id = lease_id AND (auth.uid() = p.owner_id OR auth.uid() = p.manager_id)))
+  WITH CHECK (EXISTS (SELECT 1 FROM leases l JOIN units u ON u.id = l.unit_id JOIN properties p ON p.id = u.property_id WHERE l.id = lease_id AND (auth.uid() = p.owner_id OR auth.uid() = p.manager_id)));
+
+CREATE POLICY "Owners and managers can view invoices" ON invoices FOR SELECT
+  USING (EXISTS (SELECT 1 FROM leases l JOIN units u ON u.id = l.unit_id JOIN properties p ON p.id = u.property_id WHERE l.id = lease_id AND (auth.uid() = p.owner_id OR auth.uid() = p.manager_id)));
+CREATE POLICY "Owners and managers can view payments" ON payments FOR SELECT
+  USING (EXISTS (SELECT 1 FROM invoices i JOIN leases l ON l.id = i.lease_id JOIN units u ON u.id = l.unit_id JOIN properties p ON p.id = u.property_id WHERE i.id = invoice_id AND (auth.uid() = p.owner_id OR auth.uid() = p.manager_id)));
