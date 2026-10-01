@@ -91,8 +91,23 @@ export interface MaintenanceRequest {
   unit_id: string;
   tenant_id: string;
   contractor_id?: string;
+  title?: string;
   description: string;
+  category: 'plumbing' | 'electrical' | 'hvac' | 'security' | 'appliance' | 'structural' | 'general';
+  priority: 'emergency' | 'high' | 'normal' | 'low';
   status: 'open' | 'assigned' | 'in_progress' | 'completed' | 'verified';
   photo_url?: string;
+  sla_due_at?: string;
+  resolved_at?: string;
+  created_at: string;
+}
+
+export interface MaintenanceQuote {
+  id: string;
+  request_id: string;
+  contractor_id: string;
+  amount: number;
+  description: string;
+  status: 'submitted' | 'shortlisted' | 'approved' | 'rejected';
   created_at: string;
 }
