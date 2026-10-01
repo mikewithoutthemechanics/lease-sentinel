@@ -27,7 +27,8 @@ export default function LoginPage() {
     if (error) {
       toast.error(error.message)
     } else {
-      router.push('/dashboard')
+      const { count } = await supabase.from('properties').select('id', { count: 'exact', head: true })
+      router.push(count ? '/dashboard' : '/onboarding')
       router.refresh()
     }
     setLoading(false)

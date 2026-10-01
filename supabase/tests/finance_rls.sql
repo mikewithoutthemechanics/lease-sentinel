@@ -1,0 +1,13 @@
+-- Execute in a Supabase test project with two authenticated users.
+-- The assertions are intentionally kept as a runbook because auth.uid() must be
+-- set by the Supabase test harness, not by a production SQL migration.
+--
+-- 1. Sign in as landlord A and verify /api/finance returns only A's properties,
+--    units, leases, invoices, expenses and distributions.
+-- 2. Sign in as landlord B and verify every A id returns zero rows under RLS.
+-- 3. Verify a tenant can read their own profile but cannot read owner expenses,
+--    owner statements, bank transactions or distributions.
+-- 4. Verify a manager assigned to property A can read and manage A's finance data
+--    but cannot access property B.
+-- 5. Verify an imported bank transaction without a property_id is not matchable;
+--    imports should always assign a property before reconciliation.
