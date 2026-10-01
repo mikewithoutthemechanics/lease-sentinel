@@ -54,6 +54,11 @@ export async function updateSession(request: NextRequest) {
     }
   )
 
+  // Provider webhooks and scheduled jobs authenticate themselves (signature
+  // verification / CRON_SECRET) and must never be redirected to the login page.
+  const unauthenticatedEndpoints = ['/api/payfast/notify', '/api/cron/']
+  if (unauthenticatedEndpoints.some(path => request.nextUrl.pathname.startsWith(path))) return response
+
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user && !request.nextUrl.pathname.startsWith('/login') && !request.nextUrl.pathname.startsWith('/auth') && !['/', '/demo', '/pricing', '/trust', '/health-check', '/onboarding'].includes(request.nextUrl.pathname)) {
