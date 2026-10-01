@@ -42,6 +42,13 @@ ALTER TABLE maintenance_quotes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE maintenance_comments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE preventative_maintenance ENABLE ROW LEVEL SECURITY;
 CREATE INDEX IF NOT EXISTS maintenance_queue_idx ON maintenance_requests(status, priority, created_at DESC);
+
+CREATE POLICY "Tenants and assigned contractors can view maintenance requests" ON maintenance_requests FOR SELECT
+ USING (auth.uid() = tenant_id OR auth.uid() = contractor_id OR EXISTS (SELECT 1 FROM units u JOIN properties p ON p.id = u.property_id WHERE u.id = unit_id AND (auth.uid() = p.owner_id OR auth.uid() = p.manager_id)));
+CREATE POLICY "Tenants can create maintenance requests" ON maintenance_requests FOR INSERT
+ WITH CHECK (auth.uid() = tenant_id);
+CREATE POLICY "Teams can update maintenance requests" ON maintenance_requests FOR UPDATE
+ USING (auth.uid() = tenant_id OR auth.uid() = contractor_id OR EXISTS (SELECT 1 FROM units u JOIN properties p ON p.id = u.property_id WHERE u.id = unit_id AND (auth.uid() = p.owner_id OR auth.uid() = p.manager_id)));
 CREATE INDEX IF NOT EXISTS maintenance_quote_request_idx ON maintenance_quotes(request_id, status);
 
 CREATE POLICY "Property teams can manage maintenance quotes" ON maintenance_quotes FOR ALL

@@ -21,11 +21,11 @@ export async function GET(request: Request) {
   }
   let query = supabase.from('maintenance_requests').select('id, title, description, status, priority, category, photo_url, created_at, sla_due_at, resolved_at, contractor_id, units(unit_number, properties(id, name, city)), profiles!maintenance_requests_tenant_id_fkey(full_name)').order('created_at', { ascending: false })
   if (status && status !== 'all') query = query.eq('status', status)
-  const [{ data: requests, error }, { data: contractors, error: contractorError }] = await Promise.all([query, supabase.from('profiles').select('id, full_name, email, phone').eq('role', 'contractor').order('full_name')])
-  if (error || contractorError) return NextResponse.json({ error: (error || contractorError)?.message }, { status: 400 })
+  const [{ data: requests, error }, { data: contractors, error: contractorError }, { data: schedules, error: scheduleError }] = await Promise.all([query, supabase.from('profiles').select('id, full_name, email, phone').eq('role', 'contractor').order('full_name'), supabase.from('preventative_maintenance').select('id, property_id, title, description, frequency_months, next_due_date, contractor_id, active, properties(name)').eq('active', true).order('next_due_date')])
+  if (error || contractorError || scheduleError) return NextResponse.json({ error: (error || contractorError || scheduleError)?.message }, { status: 400 })
   const counts = { open: 0, assigned: 0, in_progress: 0, completed: 0, emergency: 0 }
   for (const item of requests ?? []) { if (item.status in counts) counts[item.status as keyof typeof counts] += 1; if (item.priority === 'emergency') counts.emergency += 1 }
-  return NextResponse.json({ requests: requests ?? [], contractors: contractors ?? [], counts })
+  return NextResponse.json({ requests: requests ?? [], contractors: contractors ?? [], schedules: schedules ?? [], counts })
 }
 
 export async function POST(request: Request) {
@@ -57,7 +57,7 @@ export async function POST(request: Request) {
   }
   if (!body.requestId) return NextResponse.json({ error: 'requestId is required' }, { status: 400 })
   if (body.action === 'update') {
-    const allowed = ['status', 'priority', 'category', 'contractor_id']
+    const allowed = ['status', 'priority', 'category', 'contractor_id', 'photo_url', 'tenant_rating']
     const updates = Object.fromEntries(Object.entries(body).filter(([key]) => allowed.includes(key)))
     if (updates.status === 'completed') updates.resolved_at = new Date().toISOString()
     const { data, error } = await supabase.from('maintenance_requests').update(updates).eq('id', body.requestId).select().single()
