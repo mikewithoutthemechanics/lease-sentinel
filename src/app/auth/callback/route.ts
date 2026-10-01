@@ -10,7 +10,9 @@ export async function GET(request: Request) {
     const supabase = await createClient()
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error) {
-      return NextResponse.redirect(`${origin}${next}`)
+      const { data: { user } } = await supabase.auth.getUser()
+      const { count } = await supabase.from('properties').select('id', { count: 'exact', head: true }).eq('owner_id', user?.id || '')
+      return NextResponse.redirect(`${origin}${count ? next : '/onboarding'}`)
     }
   }
 
