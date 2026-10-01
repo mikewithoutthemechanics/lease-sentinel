@@ -87,7 +87,14 @@ export async function POST(request: Request) {
   }
 
   if (action === 'match-bank') {
-    if (!body.bankTransactionId || (!body.paymentId && !body.expenseId)) return NextResponse.json({ error: 'A bank transaction and payment or expense are required' }, { status: 400 })
+    if (!body.bankTransactionId || (!body.paymentId && !body.expenseId) || (body.paymentId && body.expenseId)) return NextResponse.json({ error: 'Choose exactly one payment or expense to match' }, { status: 400 })
+    const { data: bankLine, error: bankError } = await supabase.from('bank_transactions').select('id, amount, status').eq('id', body.bankTransactionId).eq('status', 'unmatched').single()
+    if (bankError || !bankLine) return NextResponse.json({ error: 'Bank transaction is no longer available' }, { status: 409 })
+    const targetTable = body.paymentId ? 'payments' : 'expenses'
+    const targetId = body.paymentId || body.expenseId
+    const { data: target, error: targetError } = await supabase.from(targetTable).select('id, amount').eq('id', targetId).single()
+    if (targetError || !target) return NextResponse.json({ error: 'Selected match could not be found' }, { status: 404 })
+    if (Math.abs(Math.abs(Number(bankLine.amount)) - Math.abs(Number(target.amount))) > 0.01) return NextResponse.json({ error: 'Amounts do not match. Select a transaction with the same amount.' }, { status: 422 })
     const update = body.paymentId ? { status: 'matched', matched_payment_id: body.paymentId } : { status: 'matched', matched_expense_id: body.expenseId }
     const { data, error } = await supabase.from('bank_transactions').update(update).eq('id', body.bankTransactionId).eq('status', 'unmatched').select().single()
     if (error) return NextResponse.json({ error: error.message }, { status: 400 })
