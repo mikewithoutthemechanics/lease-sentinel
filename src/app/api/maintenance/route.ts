@@ -3,6 +3,11 @@ import { addHours, format } from 'date-fns'
 import { createClient } from '@/lib/supabase/server'
 import { categorizeIssueAndSuggestContractor } from '@/lib/ai-service'
 
+async function queueNotification(supabase: Awaited<ReturnType<typeof createClient>>, recipientId: string | null | undefined, template: string, payload: Record<string, unknown>, channel: 'email' | 'sms' | 'whatsapp' = 'email') {
+  if (!recipientId) return
+  await supabase.from('notification_queue').insert({ recipient_id: recipientId, channel, template, payload, scheduled_for: new Date().toISOString() })
+}
+
 export async function GET(request: Request) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -47,6 +52,7 @@ export async function POST(request: Request) {
         if (suggestion.suggested_contractor_id) await supabase.from('maintenance_requests').update({ contractor_id: suggestion.suggested_contractor_id, status: 'assigned', category: suggestion.category || body.category }).eq('id', data.id)
       }
     } catch { /* AI remains optional and auditable through the request record. */ }
+    await queueNotification(supabase, user.id, 'maintenance_request_received', { requestId: data.id, title: data.title, priority: data.priority })
     return NextResponse.json({ request: data }, { status: 201 })
   }
   if (body.action === 'preventative') {
@@ -62,12 +68,17 @@ export async function POST(request: Request) {
     if (updates.status === 'completed') updates.resolved_at = new Date().toISOString()
     const { data, error } = await supabase.from('maintenance_requests').update(updates).eq('id', body.requestId).select().single()
     if (error) return NextResponse.json({ error: error.message }, { status: 400 })
+    const { data: context } = await supabase.from('maintenance_requests').select('tenant_id, contractor_id, title').eq('id', body.requestId).single()
+    await queueNotification(supabase, context?.tenant_id, updates.status === 'completed' ? 'maintenance_completed' : 'maintenance_status_updated', { requestId: body.requestId, title: context?.title, status: updates.status })
+    if (updates.contractor_id) await queueNotification(supabase, updates.contractor_id as string, 'maintenance_assigned', { requestId: body.requestId, title: context?.title })
     return NextResponse.json({ request: data })
   }
   if (body.action === 'quote') {
     if (!body.contractorId || !body.amount || !body.description) return NextResponse.json({ error: 'contractorId, amount and description are required' }, { status: 400 })
     const { data, error } = await supabase.from('maintenance_quotes').insert({ request_id: body.requestId, contractor_id: body.contractorId, amount: body.amount, description: body.description, valid_until: body.validUntil || null }).select().single()
     if (error) return NextResponse.json({ error: error.message }, { status: 400 })
+    const { data: context } = await supabase.from('maintenance_requests').select('tenant_id, title').eq('id', body.requestId).single()
+    await queueNotification(supabase, context?.tenant_id, 'maintenance_quote_received', { requestId: body.requestId, title: context?.title, amount: body.amount })
     return NextResponse.json({ quote: data }, { status: 201 })
   }
   if (body.action === 'approve-quote') {
@@ -76,6 +87,9 @@ export async function POST(request: Request) {
     if (error) return NextResponse.json({ error: error.message }, { status: 400 })
     await supabase.from('maintenance_quotes').update({ status: 'rejected' }).eq('request_id', body.requestId).neq('id', body.quoteId).eq('status', 'submitted')
     await supabase.from('maintenance_requests').update({ status: 'in_progress', contractor_id: quote.contractor_id }).eq('id', body.requestId)
+    const { data: context } = await supabase.from('maintenance_requests').select('tenant_id, title').eq('id', body.requestId).single()
+    await queueNotification(supabase, quote.contractor_id, 'maintenance_quote_approved', { requestId: body.requestId, title: context?.title, amount: quote.amount })
+    await queueNotification(supabase, context?.tenant_id, 'maintenance_work_started', { requestId: body.requestId, title: context?.title })
     return NextResponse.json({ quote })
   }
   if (body.action === 'comment') {

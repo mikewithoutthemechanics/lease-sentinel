@@ -11,7 +11,7 @@ export async function POST(request: Request) {
   for (const item of queue ?? []) {
     try {
       const recipient = Array.isArray(item.profiles) ? item.profiles[0] : item.profiles
-      await sendNotification(item.channel as 'email' | 'sms', recipient || {}, item.payload as { subject?: string; body?: string })
+      await sendNotification(item.channel as 'email' | 'sms' | 'whatsapp', recipient || {}, item.payload as { subject?: string; body?: string })
       await supabase.from('notification_queue').update({ status: 'sent', sent_at: new Date().toISOString(), attempts: item.attempts + 1 }).eq('id', item.id)
       sent += 1
     } catch (notificationError) {
