@@ -40,7 +40,7 @@ export default function DashboardPage() {
         </nav>
         <p className="px-3 mb-3 mt-9 text-[10px] font-bold uppercase tracking-[.16em] text-slate-400">Manage</p>
         <nav className="space-y-1">
-          {[['Integrations', Zap], ['Settings', Settings2]].map(([label, Icon]) => <button key={label as string} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-900"><Icon size={18} />{label as string}</button>)}
+          {[['Integrations', Zap], ['Settings', Settings2]].map(([label, Icon]) => <button key={label as string} onClick={() => { if (label === 'Integrations') window.location.href = '/dashboard/integrations'; if (label === 'Settings') window.location.href = '/dashboard/automations' }} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-900"><Icon size={18} />{label as string}</button>)}
         </nav>
         <div className="mt-auto rounded-2xl bg-[#193b37] p-4 text-white"><div className="mb-3 flex items-center gap-2 text-sm font-semibold"><Sparkles size={16} className="text-[#f4c95d]" /> Sentinel AI</div><p className="text-xs leading-relaxed text-emerald-100">Your portfolio copilot is ready to find savings and handle admin.</p><button onClick={() => setShowAssistant(true)} className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-white/10 py-2 text-xs font-semibold hover:bg-white/20">Ask anything <ArrowUpRight size={13} /></button></div>
       </aside>
