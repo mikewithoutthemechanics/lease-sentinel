@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --experimental-strip-types --test tests/finance.test.ts"
+    "test": "node --experimental-strip-types --import ./tests/alias-register.mjs --test tests/finance.test.ts tests/payfast.test.ts tests/payfast-ledger.test.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",
