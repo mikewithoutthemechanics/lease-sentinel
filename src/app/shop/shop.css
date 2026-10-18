@@ -1,0 +1,229 @@
+/* ─────────────────────────────────────────────────────────────
+   Hlaza — Living Supply Co.
+   The shop runs its own visual language, independent of the
+   Lease Sentinel workspace on the rest of the app.
+   ───────────────────────────────────────────────────────────── */
+
+:root {
+  --ink: #0d1610;
+  --moss: #1c3a29;
+  --moss-deep: #142a1e;
+  --leaf: #33684c;
+  --mint: #8ec2a2;
+  --lime: #d7e86b;
+  --clay: #c96f4a;
+  --clay-soft: #e9c6ab;
+  --bone: #f6f3ea;
+  --sand: #e7e0cf;
+  --paper: #fffdf6;
+
+  --font-display: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Palatino, "Hoefler Text",
+    Georgia, "Times New Roman", serif;
+  --font-body: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, sans-serif;
+}
+
+.shop {
+  background: var(--bone);
+  color: var(--ink);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+.shop ::selection {
+  background: var(--lime);
+  color: var(--ink);
+}
+
+/* ── Typography helpers ─────────────────────────────────────── */
+.display {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: -0.022em;
+  line-height: 0.98;
+}
+
+.eyebrow {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+}
+
+/* ── Ambient surfaces ───────────────────────────────────────── */
+.grain::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.32;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.42'/%3E%3C/svg%3E");
+}
+
+.noise-soft {
+  background-image: radial-gradient(circle at 18% 12%, rgba(255, 255, 255, 0.5), transparent 42%),
+    radial-gradient(circle at 82% 88%, rgba(255, 255, 255, 0.32), transparent 46%);
+}
+
+/* ── Marquee ────────────────────────────────────────────────── */
+@keyframes hlaza-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.marquee-track {
+  display: flex;
+  width: max-content;
+  animation: hlaza-marquee 34s linear infinite;
+}
+
+.marquee:hover .marquee-track {
+  animation-play-state: paused;
+}
+
+/* ── Slow drifting foliage ──────────────────────────────────── */
+@keyframes hlaza-sway {
+  0%,
+  100% {
+    transform: rotate(-1.6deg) translateY(0);
+  }
+  50% {
+    transform: rotate(2.2deg) translateY(-9px);
+  }
+}
+
+.sway {
+  animation: hlaza-sway 11s ease-in-out infinite;
+  transform-origin: bottom center;
+}
+
+/* ── Underline reveal ───────────────────────────────────────── */
+.link-rule {
+  position: relative;
+}
+.link-rule::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -2px;
+  height: 1px;
+  width: 100%;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.link-rule:hover::after {
+  transform: scaleX(1);
+}
+
+/* ── Cursor spotlight for cards ─────────────────────────────── */
+.spot {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  background: radial-gradient(
+    380px circle at var(--mx, 50%) var(--my, 50%),
+    rgba(255, 255, 255, 0.42),
+    transparent 62%
+  );
+  pointer-events: none;
+}
+.group:hover .spot {
+  opacity: 1;
+}
+
+/* ── Scrollbar ──────────────────────────────────────────────── */
+.shop ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+.shop ::-webkit-scrollbar-track {
+  background: var(--bone);
+}
+.shop ::-webkit-scrollbar-thumb {
+  background: #c9c3b1;
+  border-radius: 999px;
+  border: 3px solid var(--bone);
+}
+.shop ::-webkit-scrollbar-thumb:hover {
+  background: #a8a292;
+}
+
+/* ── Range slider (Mix Lab) ─────────────────────────────────── */
+input[type="range"].mix-range {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 26px;
+  background: transparent;
+  cursor: ew-resize;
+}
+input[type="range"].mix-range::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    var(--leaf) 0%,
+    var(--leaf) var(--pct, 50%),
+    rgba(28, 58, 41, 0.14) var(--pct, 50%),
+    rgba(28, 58, 41, 0.14) 100%
+  );
+}
+input[type="range"].mix-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  margin-top: -7px;
+  height: 20px;
+  width: 20px;
+  border-radius: 999px;
+  background: var(--paper);
+  border: 3px solid var(--moss);
+  box-shadow: 0 3px 10px rgba(13, 22, 16, 0.22);
+  transition: transform 0.15s ease;
+}
+input[type="range"].mix-range:active::-webkit-slider-thumb {
+  transform: scale(1.16);
+}
+input[type="range"].mix-range::-moz-range-track {
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(28, 58, 41, 0.14);
+}
+input[type="range"].mix-range::-moz-range-progress {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--leaf);
+}
+input[type="range"].mix-range::-moz-range-thumb {
+  height: 20px;
+  width: 20px;
+  border-radius: 999px;
+  background: var(--paper);
+  border: 3px solid var(--moss);
+}
+
+/* ── Utility ────────────────────────────────────────────────── */
+.text-balance {
+  text-wrap: balance;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marquee-track,
+  .sway {
+    animation: none;
+  }
+}
